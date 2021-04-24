@@ -1,0 +1,24 @@
+
+# Install Zabbix repository 
+sudo wget https://repo.zabbix.com/zabbix/5.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.0-1+focal_all.deb
+sudo dpkg -i zabbix-release_5.0-1+focal_all.deb
+sudo apt update
+# Install Zabbix server, frontend, agent 
+sudo apt install zabbix-server-pgsql zabbix-frontend-php php7.4-pgsql zabbix-apache-conf zabbix-agent sed -y
+
+# install postgresql
+sudo apt install postgresql postgresql-contrib -y 
+
+sudo -u postgres createuser zabbix
+sudo -u postgres createdb -O zabbix zabbix 
+zcat /usr/share/doc/zabbix-server-pgsql*/create.sql.gz | sudo -u zabbix psql zabbix 
+sudo systemctl restart postgresql
+
+# config zabbix-server host and password
+sudo sed -i 's/# DBHost=localhost/# DBhost=localhost\n\nDBHost=localhost/' /etc/zabbix/zabbix_server.conf
+sudo sed -i 's/# DBPassword=/# DBPassword=\n\nDBPassword=zabbix/' /etc/zabbix/zabbix_server.conf
+# config timezone php
+sudo sed -i 's/# php_value date.timezone Europe\/Riga/php_value date.timezone Africa\/Casablanca/' /etc/zabbix/apache.conf
+
+sudo systemctl restart zabbix-server zabbix-agent apache2
+sudo systemctl enable zabbix-server zabbix-agent apache2
